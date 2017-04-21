@@ -1,0 +1,59 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  namespace: rabbitmq-autocluster
+  name: rabbitmq
+spec:
+  serviceName: rabbitmq-cluster
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: dannyaj/rabbitmq-autocluster
+#        imagePullPolicy: Never
+        ports:
+          - containerPort: 5672
+            name: port-5672
+          - containerPort: 4369
+            name: port-4369
+          - containerPort: 5671
+            name: port-5671
+          - containerPort: 15672
+            name: port-15672
+          - containerPort: 25672
+            name: port-25672
+        env:
+          - name: HOSTNAME
+            valueFrom:
+             fieldRef:
+              fieldPath: status.podIP
+          - name: MY_POD_IP
+            valueFrom:
+             fieldRef:
+              fieldPath: status.podIP
+          - name: AUTOCLUSTER_LOG_LEVE
+            value: "debug"
+          - name: AUTOCLUSTER_CLEANUP
+            value: "true"
+          - name: CLEANUP_INTERVAL
+            value: "30"
+          - name: CLEANUP_WARN_ONLY
+            value: "false"
+          - name: AUTOCLUSTER_TYPE
+            value: "k8s"
+          - name: K8S_SCHEME
+            value: "http"
+          - name: K8S_HOST
+            value: "10.10.1.10"
+          - name: K8S_PORT
+            value: "8080"
+          # start.sh will store this value to a proper location in filesystem
+          - name: RABBITMQ_ERLANG_COOKIE
+            valueFrom:
+             secretKeyRef:
+              name: erlang.cookie
+              key: erlang.cookie
